@@ -16,7 +16,7 @@
       byte-identical to the export, 8/8 val-smoke with the new scorer; remote servers
       start/query/stop from the new `gpu_server.json`
 - [x] README, TRAINING.md, CLAUDE.md
-- [ ] GitHub remote (`mraad/feln-lora`) — on request
+- [x] GitHub remote: private `mraad/feln-lora`, pushed 2026-09-15
 
 ## Open ideas (unrequested)
 
