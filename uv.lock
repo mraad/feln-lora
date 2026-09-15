@@ -2,9 +2,6 @@ version = 1
 revision = 3
 requires-python = ">=3.12, <3.14"
 
-[manifest]
-overrides = [{ name = "layers-json", extras = ["model"], editable = "../layers-json" }]
-
 [[package]]
 name = "accelerate"
 version = "1.15.0"
@@ -270,7 +267,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "layers-json", extras = ["model"], git = "https://github.com/mraad/layers-json.git?rev=08c6792ebd265d1813ab0a1fba16dc7178f3290f" },
+    { name = "layers-json", extras = ["model"], git = "https://github.com/mraad/layers-json.git?rev=32d6d4ea57975a05552f2ade840cf2085ff25ed1" },
     { name = "numpy", specifier = ">=2" },
     { name = "pydantic", specifier = ">=2.10" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9" },
@@ -286,7 +283,6 @@ source = { virtual = "." }
 dependencies = [
     { name = "duckdb" },
     { name = "feln" },
-    { name = "layers-json", extra = ["model"] },
     { name = "mcp" },
     { name = "pydantic" },
     { name = "sqlglot" },
@@ -309,7 +305,6 @@ dev = [
 requires-dist = [
     { name = "duckdb", specifier = ">=1.5" },
     { name = "feln", editable = "../feln" },
-    { name = "layers-json", extras = ["model"], editable = "../layers-json" },
     { name = "mcp", specifier = ">=2.2" },
     { name = "peft", marker = "extra == 'train'", specifier = ">=0.20" },
     { name = "pydantic", specifier = ">=2.10" },
@@ -506,27 +501,12 @@ wheels = [
 [[package]]
 name = "layers-json"
 version = "0.4.2"
-source = { editable = "../layers-json" }
+source = { git = "https://github.com/mraad/layers-json.git?rev=32d6d4ea57975a05552f2ade840cf2085ff25ed1#32d6d4ea57975a05552f2ade840cf2085ff25ed1" }
 
 [package.optional-dependencies]
 model = [
     { name = "pydantic" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "duckdb", marker = "extra == 'duckdb'", specifier = ">=1.5.5" },
-    { name = "gdal", marker = "extra == 'fgdb'", specifier = ">=3.6" },
-    { name = "layers-json", extras = ["model"], marker = "extra == 'dev'" },
-    { name = "pyarrow", marker = "extra == 'dev'", specifier = ">=25" },
-    { name = "pyarrow", marker = "extra == 'duckdb'", specifier = ">=25.0.1" },
-    { name = "pydantic", marker = "extra == 'model'", specifier = ">=2.10" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9" },
-    { name = "pyyaml", marker = "extra == 'dev'", specifier = ">=6" },
-    { name = "rich", marker = "extra == 'duckdb'", specifier = ">=15.0.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.16" },
-]
-provides-extras = ["duckdb", "model", "fgdb", "dev"]
 
 [[package]]
 name = "markdown-it-py"

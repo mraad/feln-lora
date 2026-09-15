@@ -13,7 +13,8 @@ training or scoring jobs; rerun only to reproduce or to train on new data.
 The RTX Python is `/home/ubuntu/Automodel/.venv` (NeMo AutoModel checkout `4e00f6be0`,
 Python 3.12, torch 2.10+cu130, transformers 5.15.1, peft 0.20.0, torchao 0.18, mamba_ssm
 kernels) with `uv pip install --no-deps -e /home/ubuntu/feln -e /home/ubuntu/layers-json`
-on top — rsync those sibling checkouts alongside this one. A `uv sync` in
+on top — rsync those sibling checkouts alongside this one (or install feln without
+`--no-deps` and let it fetch the public layers-json pin). A `uv sync` in
 `/home/ubuntu/Automodel` would undo the `uv pip` additions (peft, sqlglot, pydantic,
 torchao, feln, layers-json); never run it there. `/home/ubuntu/gait-feln-finetuning/.venv`
 is the retired Qwen-era stack: it lacks mamba_ssm and OOMs on Nemotron scoring.

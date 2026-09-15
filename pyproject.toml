@@ -5,7 +5,6 @@ description = "LoRA fine-tuning of Nemotron-3-Nano-4B for natural language → F
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "feln",
-    "layers-json[model]",
     "duckdb>=1.5",
     "mcp>=2.2",
     "pydantic>=2.10",
@@ -21,12 +20,8 @@ train = ["torch", "transformers>=5", "peft>=0.20"]
 dev = ["pyright>=1.1", "ruff>=0.16"]
 
 [tool.uv.sources]
+# feln brings layers-json[model] as its own commit pin from the public GitHub repo.
 feln = { path = "../feln", editable = true }
-layers-json = { path = "../layers-json", editable = true }
-
-[tool.uv]
-# feln pins layers-json to a Git commit; the local checkout must win, as in ../feln-rag.
-override-dependencies = ["layers-json[model] @ file:///Users/mraad/GWorkspace/layers-json"]
 
 [tool.ruff]
 line-length = 100

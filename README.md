@@ -4,7 +4,8 @@ LoRA fine-tuning of **Nemotron-3-Nano-4B** to translate North Sea questions into
 [FELN](../feln) — `{"layers": [...], "where": [...], "relations": [...]}` — served locally
 as a GGUF (llama.cpp) with a JSON-schema grammar. The sibling of [`feln-rag`](../feln-rag),
 which solves the same task by retrieval + frontier LLM; both depend on [`feln`](../feln)
-(the FELN model, strict comparator, units) and [`layers-json`](../layers-json) (catalog model).
+(the FELN model, strict comparator, units), which in turn pins the public
+[`layers-json`](https://github.com/mraad/layers-json) catalog model.
 
 Measured (validation, 444 questions, `feln.FELN.same`): **441/444 (99.3%)** for the adapter
 and the merged FP16 export, **438–439/444 (98.6%)** as F16, Q8_0 or Q4_K_M GGUF on CUDA and Metal
@@ -33,14 +34,14 @@ empty string means no filter, and `field = ''` differs from `field IS NULL`.
 ## Setup (Mac)
 
 ```bash
-uv sync                                     # py3.13; ../feln and ../layers-json editable
+uv sync                                     # py3.13; ../feln editable, layers-json from GitHub
 uv run --no-sync python -m unittest discover -s tests
 uv run --no-sync ruff check src scripts tests && uv run --no-sync pyright src scripts tests
 ```
 
-`--no-sync` keeps the environment as installed. The `layers-json` override in
-`pyproject.toml` is an absolute path (as in `feln-rag`); adjust it if the workspace moves.
-Training/scoring deps (`torch`, `transformers`, `peft`) live only on the GPU box's
+`--no-sync` keeps the environment as installed. `layers-json` is public, so no GitHub
+credentials or local checkout are needed; to test a local `../layers-json` edit,
+`uv pip install -e ../layers-json` and keep using `--no-sync`. Training/scoring deps (`torch`, `transformers`, `peft`) live only on the GPU box's
 AutoModel venv; `uv sync --extra train` installs them elsewhere if ever needed.
 
 ## FELN Studio
