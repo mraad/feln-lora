@@ -1,0 +1,36 @@
+[project]
+name = "feln-lora"
+version = "0.1.0"
+description = "LoRA fine-tuning of Nemotron-3-Nano-4B for natural language → FELN, served as GGUF."
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "feln",
+    "layers-json[model]",
+    "duckdb>=1.5",
+    "mcp>=2.2",
+    "pydantic>=2.10",
+    "sqlglot>=26",
+]
+
+[project.optional-dependencies]
+# HF scoring/export (src.infer_feln --model) and the AutoModel dataset; the RTX
+# AutoModel venv already provides these, so the Mac never installs them.
+train = ["torch", "transformers>=5", "peft>=0.20"]
+
+[dependency-groups]
+dev = ["pyright>=1.1", "ruff>=0.16"]
+
+[tool.uv.sources]
+feln = { path = "../feln", editable = true }
+layers-json = { path = "../layers-json", editable = true }
+
+[tool.uv]
+# feln pins layers-json to a Git commit; the local checkout must win, as in ../feln-rag.
+override-dependencies = ["layers-json[model] @ file:///Users/mraad/GWorkspace/layers-json"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]

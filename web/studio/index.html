@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f4ef">
+  <title>FELN Studio · Nemotron</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="FELN Studio home"><span class="brandmark" aria-hidden="true">f.</span> FELN <span class="brand-light">Studio</span></a>
+    <span class="workspace">NATURAL LANGUAGE → GEOSPATIAL LOGIC · NEMOTRON-3-NANO-4B</span>
+    <span class="local"><span class="dot"></span> Local workspace</span>
+  </header>
+  <main>
+    <section class="intro">
+      <div><p class="eyebrow">THE MODEL PLAYGROUND</p><h1>From a question.<br>To a <em>spatial answer.</em></h1>
+      <p class="intro-copy">No retrieval, no examples. The trained prompt and catalog are baked in;<br class="desktop-break"> ask, and inspect the exact FELN the fine-tuned Nemotron decodes.</p></div>
+      <div class="pipeline" aria-label="Pipeline: your words, trained prompt, one FELN"><span>01 <b>Your words</b></span><span class="connector"></span><span>02 <b>Trained prompt</b></span><span class="connector"></span><span>03 <b>One FELN</b></span></div>
+    </section>
+    <div class="workbench">
+      <section class="composer panel" aria-labelledby="compose-title">
+        <div class="panel-heading"><div><span class="step">01</span><h2 id="compose-title">Compose your query</h2></div><span class="small-tag">INPUT</span></div>
+        <form id="query-form" novalidate>
+          <label class="field-label" for="model">Model</label>
+          <select id="model" name="model" required></select>
+          <label class="field-label" for="known">Known question <span class="muted">(optional, compared against its recorded FELN)</span></label>
+          <select id="known"><option value="">— Type your own below —</option></select>
+          <label class="field-label" for="query">What would you like to find?</label>
+          <textarea id="query" name="query" maxlength="2000" required rows="5" spellcheck="false">Show gas wells in Norway</textarea>
+          <div class="field-meta"><span>Use layer names, filters, and spatial relationships.</span><span id="character-count">0 characters</span></div>
+          <details class="prompt-details">
+            <summary><span><span class="sliders" aria-hidden="true">≡</span> Trained prompt <span class="muted">& catalog</span></span><span class="edit-label">EDIT ↗</span></summary>
+            <div class="prompt-body"><p>This prefix precedes your question exactly as during training. Editing it is an experiment: the model was never trained on other instructions.</p><label class="sr-only" for="prompt">Prompt prefix</label><textarea id="prompt" maxlength="100000" rows="12" spellcheck="false" required></textarea><button id="reset-prompt" class="text-button" type="button">Restore trained prompt</button></div>
+          </details>
+          <div class="actions"><button id="generate" class="primary" type="submit" disabled>Generate FELN <span aria-hidden="true">↗</span></button></div>
+          <p class="action-note">Greedy, schema-constrained decoding on this Mac (llama.cpp, Metal). Nothing leaves it.</p>
+        </form>
+        <div class="configuration"><div><span class="config-label">BUNDLE</span><span id="bundle">Connecting…</span></div><div><span class="config-label">DECODING</span><span>Greedy · JSON-schema grammar · Q8_0 GGUF on Metal</span></div></div>
+      </section>
+      <section class="result panel" aria-labelledby="result-title">
+        <div class="panel-heading"><div><span class="step">03</span><h2 id="result-title">The resulting FELN</h2></div><span id="result-badge" class="small-tag">OUTPUT</span></div>
+        <div id="result-empty" class="empty-result"><div class="code-icon" aria-hidden="true">{<span>✧</span>}</div><h3>A little language. A precise query.</h3><p>Your generated layers, filters, and spatial<br>relationships will appear here.</p><span class="empty-example">layers <span>·</span> where <span>·</span> relations</span></div>
+        <div id="result-content" hidden><div class="code-toolbar"><span id="result-description">FELN / JSON</span><button id="copy" class="copy-button" type="button">Copy JSON</button></div><pre id="result-code" tabindex="0" aria-label="Generated FELN"></pre><div id="result-summary" class="result-summary"></div></div>
+        <div class="result-footer"><span class="dot"></span><span id="result-footer-text">Schema-compiled. Strictly compared when a record exists.</span></div>
+      </section>
+    </div>
+    <section class="examples-section" aria-labelledby="gold-title">
+      <div class="examples-heading"><div><p class="eyebrow">AGAINST THE RECORD</p><h2 id="gold-title">The recorded FELN. <span>Strictly compared.</span></h2></div><span id="verdict" class="count-pill">NO RECORD</span></div>
+      <p id="gold-description" class="examples-description">When your question is one of the recorded ones, its expected FELN appears here with the strict comparator's verdict.</p>
+      <div id="gold-empty" class="examples-empty"><span aria-hidden="true">⌕</span><p>No recorded FELN for this question.<br><small>Pick a known question above to compare the model against its record.</small></p></div>
+      <div id="gold" class="examples-grid single"></div>
+    </section>
+    <div id="status" class="status" role="status" aria-live="polite">Connecting to your workspace…</div>
+    <footer class="page-footer"><span>FELN Studio <span class="muted">/ A small space for spatial thinking.</span></span><span id="corpus-info">Vanilla JavaScript. Real inference.</span></footer>
+  </main>
+  <template id="gold-template"><article class="example-card"><div class="example-top"><span class="example-rank">GOLD</span><span class="similarity"></span></div><p class="example-text"></p><div class="example-layers"></div><details open><summary>Expected FELN <span aria-hidden="true">↗</span></summary><pre tabindex="0"></pre></details></article></template>
+</body>
+</html>

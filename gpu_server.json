@@ -1,0 +1,29 @@
+{
+  "machine": {
+    "profile": "GeoCowork",
+    "region": "us-west-2",
+    "instance_id": "i-01c983f1111ea3b69",
+    "name": "geoPercept-Base-CloudFirst-Blackwell-MR (g7e.12xlarge, 2x RTX PRO 6000)"
+  },
+  "ssh": {
+    "host": "52.88.16.111",
+    "user": "ubuntu",
+    "key": "/Users/mraad/geocowork-oregon.pem"
+  },
+  "server": {
+    "llama_server": "/home/ubuntu/llama.cpp-gpu/build/bin/llama-server",
+    "gguf": "/home/ubuntu/feln-lora/runs/automodel-nemotron-20260914/gguf/nemotron-4b-step443-q8_0.gguf",
+    "gguf_sha256": "110fdab9e5cfa27b685a5b41c8b43ae3939ba4b38cc14783df74f3017d7720cf",
+    "alias": "northsea-feln-nemotron-4b-q8",
+    "port": 8090,
+    "tmux": "feln-gpu-server",
+    "context": 2048,
+    "gpus": [
+      "0",
+      "1"
+    ],
+    "slots": 2
+  },
+  "bundle": "runs/nemotron-mac-20260915/merged",
+  "local_port": 8090
+}

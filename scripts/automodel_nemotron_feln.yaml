@@ -1,0 +1,114 @@
+# NeMo AutoModel recipe: Nemotron-3-Nano-4B (nemotron_h) BF16 LoRA on FELN.
+# Mirrors the backbone baseline (BACKBONE_TRIALS_2026-09-13.md): rank 16 / alpha 32,
+# LR 2e-4, wd 0.01, cosine, 3% warmup, effective batch 16, six epochs, eval/ckpt every 100.
+# Validation here is loss only; FELN exact match is scored post hoc per checkpoint with
+# src.infer_feln. Run from an experiment root runs/<exp>/ containing data/ (a
+# scripts/prepare_northsea.py output), with PYTHONPATH at the feln-lora checkout.
+# The RTX login shell exports a system-CUDA LD_LIBRARY_PATH that shadows torch's bundled
+# cuBLASLt (bf16 matmul aborts with CUBLAS_STATUS_NOT_INITIALIZED); with it unset,
+# TransformerEngine's ctypes load cannot find libcudnn. Point it at the venv's NVIDIA libs only:
+#   SP=/home/ubuntu/Automodel/.venv/lib/python3.12/site-packages
+#   LD_LIBRARY_PATH=$(ls -d $SP/nvidia/*/lib | tr '\n' ':') CUDA_VISIBLE_DEVICES=1 \
+#     PYTHONPATH=/home/ubuntu/feln-lora HF_HUB_OFFLINE=1 \
+#     /home/ubuntu/Automodel/.venv/bin/automodel /home/ubuntu/feln-lora/scripts/automodel_nemotron_feln.yaml \
+#     --nproc-per-node 1
+# The AutoModel venv additionally carries `peft sqlglot pydantic "torchao>=0.16"` plus editable
+# installs of /home/ubuntu/feln and /home/ubuntu/layers-json (any peft raises on the locked
+# torchao 0.14; 0.18 verified with the recipe import). Checkpoint scoring must also run from
+# this venv: the shared Qwen-era training venv lacks mamba_ssm and OOMs (see
+# scripts/automodel_eval_queue.sh).
+
+recipe: TrainFinetuneRecipeForNextTokenPrediction
+
+step_scheduler:
+  global_batch_size: 16
+  local_batch_size: 2
+  ckpt_every_steps: 100
+  val_every_steps: 100
+  num_epochs: 6
+
+dist_env:
+  backend: nccl
+  timeout_minutes: 20
+
+rng:
+  _target_: nemo_automodel.components.training.rng.StatefulRNG
+  seed: 42
+  ranked: true
+
+model:
+  _target_: nemo_automodel.NeMoAutoModelForCausalLM.from_pretrained
+  pretrained_model_name_or_path: nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16
+  revision: dfaf35de3e30f1867dd8dbc38a7fc9fb52d3914f
+  torch_dtype: bf16
+  trust_remote_code: false
+  backend:
+    _target_: nemo_automodel.components.models.common.utils.BackendConfig
+    # TE's cuDNN fused attention fails on this RTX PRO 6000 (Blackwell) build.
+    attn: sdpa
+
+compile:
+  enabled: false
+
+checkpoint:
+  enabled: true
+  checkpoint_dir: checkpoints/
+  model_save_format: safetensors
+  save_consolidated: false
+  restore_from: LATEST
+
+peft:
+  _target_: nemo_automodel.components._peft.lora.PeftConfig
+  # All linear layers except the fused-Mamba out_proj (custom kernel reads the raw
+  # weight) and the output head, matching PEFT all-linear minus the rejected modules.
+  exclude_modules: ["*.out_proj", "*.lm_head", "lm_head"]
+  dim: 16
+  alpha: 32
+  dropout: 0.0
+  use_triton: true
+
+distributed:
+  strategy: fsdp2
+  dp_size: null
+  tp_size: 1
+  cp_size: 1
+  sequence_parallel: false
+
+loss_fn:
+  _target_: nemo_automodel.components.loss.masked_ce.MaskedCrossEntropy
+
+dataset:
+  _target_: scripts.automodel_feln.FELNDataset
+  data_dir: data
+  split: train
+  max_seq_length: 2048
+
+validation_dataset:
+  _target_: scripts.automodel_feln.FELNDataset
+  data_dir: data
+  split: val
+  max_seq_length: 2048
+
+packed_sequence:
+  packed_sequence_size: 0
+
+dataloader:
+  _target_: torchdata.stateful_dataloader.StatefulDataLoader
+  collate_fn: nemo_automodel.components.datasets.utils.default_collater
+  shuffle: true
+
+validation_dataloader:
+  _target_: torchdata.stateful_dataloader.StatefulDataLoader
+  collate_fn: nemo_automodel.components.datasets.utils.default_collater
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 2.0e-4
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+
+lr_scheduler:
+  lr_decay_style: cosine
+  lr_warmup_steps: 40
+  min_lr: 0.0
