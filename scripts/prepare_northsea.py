@@ -27,7 +27,7 @@ from src.feln_data import (
 )
 from src.spatial_query import SpatialQuery
 
-SOURCE = Path("/Users/mraad/Documents/ArcGIS/Projects/NorthSea")
+SOURCE = Path.home() / "Documents/ArcGIS/Projects/NorthSea"
 
 
 def ilike_columns(schema):

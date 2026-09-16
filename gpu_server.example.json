@@ -1,14 +1,14 @@
 {
   "machine": {
-    "profile": "GeoCowork",
-    "region": "us-west-2",
-    "instance_id": "i-01c983f1111ea3b69",
-    "name": "geoPercept-Base-CloudFirst-Blackwell-MR (g7e.12xlarge, 2x RTX PRO 6000)"
+    "profile": "<aws-profile>",
+    "region": "<aws-region>",
+    "instance_id": "i-xxxxxxxxxxxxxxxxx",
+    "name": "<instance label, informational>"
   },
   "ssh": {
-    "host": "52.88.16.111",
+    "host": "<elastic-ip-or-hostname>",
     "user": "ubuntu",
-    "key": "/Users/mraad/geocowork-oregon.pem"
+    "key": "~/.ssh/<key>.pem"
   },
   "server": {
     "llama_server": "/home/ubuntu/llama.cpp-gpu/build/bin/llama-server",
@@ -18,10 +18,7 @@
     "port": 8090,
     "tmux": "feln-gpu-server",
     "context": 2048,
-    "gpus": [
-      "0",
-      "1"
-    ],
+    "gpus": ["0", "1"],
     "slots": 2
   },
   "bundle": "runs/nemotron-mac-20260915/merged",

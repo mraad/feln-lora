@@ -118,7 +118,7 @@ class GpuServer:
             "ConnectionAttempts=1",
             *control,
             "-i",
-            ssh["key"],
+            str(Path(ssh["key"]).expanduser()),
             *extra,
             f"{ssh['user']}@{ssh['host']}",
         ]

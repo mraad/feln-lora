@@ -67,8 +67,9 @@ uv run --no-sync python -m src.edge_client --bundle runs/nemotron-mac-20260915/m
 
 ## Remote GPU inference + MCP
 
-`gpu_server.json` names the EC2 box (`i-01c983f1111ea3b69`, GeoCowork profile, elastic IP
-52.88.16.111), the remote `llama-server` build and the checksum-pinned Q8_0 GGUF under
+`gpu_server.json` (git-ignored; copy `gpu_server.example.json` and fill in the AWS profile,
+instance id, host and SSH key path) names the EC2 box, the remote `llama-server` build and
+the checksum-pinned Q8_0 GGUF under
 `/home/ubuntu/feln-lora/runs/automodel-nemotron-20260914/gguf/`, and the local bundle
 whose `inference_config.json`/`Layers.json` define prompt and grammar. `server start` runs
 one `llama-server` per listed GPU (ports 8090, 8091; two slots each) and the Mac

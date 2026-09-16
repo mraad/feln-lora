@@ -13,7 +13,7 @@ from sqlglot import exp
 
 from .feln_data import Schema
 
-DATABASE = Path("/Users/mraad/Documents/ArcGIS/Projects/NorthSea/NorthSea.ddb")
+DATABASE = Path.home() / "Documents/ArcGIS/Projects/NorthSea/NorthSea.ddb"
 DISTANCE_NOTE = "Distances use WGS84 / UTM zone 32N (EPSG:32632), a regional planar approximation—not geodesic distance."
 
 
