@@ -145,11 +145,12 @@ provenance. In short:
 # questions, execute-filtered, grouped train/val/test)
 uv run --no-sync python -m scripts.prepare_northsea --output runs/<exp>
 
-# RTX (AutoModel venv, see the YAML header for LD_LIBRARY_PATH): train, then score every
-# checkpoint on validation and select the earliest best
-automodel scripts/automodel_nemotron_feln.yaml --nproc-per-node 1         # LoRA, one GPU
-automodel scripts/automodel_nemotron_feln_qlora.yaml --nproc-per-node 2   # QLoRA NF4, both GPUs (v2 ran with 1)
-bash scripts/automodel_eval_queue.sh                                      # one worker per free GPU
+# RTX (AutoModel venv, see the YAML header for LD_LIBRARY_PATH), from the experiment root:
+# train, then score every checkpoint on validation and select the earliest best
+REPO=/home/ubuntu/feln-lora; cd $REPO/runs/<exp>; export PYTHONPATH=$REPO
+automodel $REPO/scripts/automodel_nemotron_feln.yaml --nproc-per-node 1         # LoRA, one GPU
+automodel $REPO/scripts/automodel_nemotron_feln_qlora.yaml --nproc-per-node 2   # QLoRA NF4, both GPUs (v2 ran with 1)
+bash $REPO/scripts/automodel_eval_queue.sh                                      # one worker per free GPU
 python -m src.infer_feln --model checkpoints/<best>/model --schema data/Layers.json --export exports/<name>
 ```
 
