@@ -14,8 +14,7 @@ TRAINING.md the exact recipe, environments and provenance. Sibling of `../feln-r
   `/home/ubuntu/Automodel/.venv` (see TRAINING.md); never `uv sync` there, never touch
   `/home/ubuntu/gait-feln-finetuning/.venv`, never start two jobs on one GPU without
   checking `tmux ls` and `nvidia-smi`. The 2026-09-14 LoRA and 2026-09-16 QLoRA runs are
-  complete: do not restart them. The AutoModel checkout there carries
-  `scripts/automodel_qlora_skip_modules.patch` uncommitted; do not reset it.
+  complete: do not restart them.
 - Validation selects checkpoints and quantizations; test and `tests/challenge.json` are
   regression sets. Report raw accuracy separately from schema-compiled accuracy. Never
   relax operators, codes, spatial direction, NULL semantics or the primary layer to

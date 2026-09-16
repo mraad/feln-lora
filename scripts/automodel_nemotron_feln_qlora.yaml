@@ -3,10 +3,11 @@
 # 3% warmup, effective batch 16, six epochs) except the base model is loaded 4-bit NF4 with
 # double quantization (bitsandbytes 0.50.2) and the job runs on both GPUs (FSDP2 dp=2,
 # local batch 2 x 2 ranks x 4 accumulation = 16, the same effective batch).
-# With `quantization:` set AutoModel loads the HF NemotronHForCausalLM class instead of its
-# custom one; HF's Mamba fast path passes out_proj.weight straight to the fused kernel, so
-# out_proj (and lm_head) stay unquantized via llm_int8_skip_modules — which needs
-# scripts/automodel_qlora_skip_modules.patch applied to the AutoModel checkout.
+# With a quantization config AutoModel loads the HF NemotronHForCausalLM class instead of
+# its custom one; HF's Mamba fast path passes out_proj.weight straight to the fused kernel,
+# so out_proj (and lm_head) stay unquantized via llm_int8_skip_modules. The config is given
+# under `model:` as a BitsAndBytesConfig target (AutoModel instantiates nested targets)
+# rather than through the recipe's `quantization:` block, which does not forward that key.
 #   SP=/home/ubuntu/Automodel/.venv/lib/python3.12/site-packages
 #   LD_LIBRARY_PATH=$(ls -d $SP/nvidia/*/lib | tr '\n' ':') CUDA_VISIBLE_DEVICES=0,1 \
 #     PYTHONPATH=/home/ubuntu/feln-lora HF_HUB_OFFLINE=1 \
@@ -39,6 +40,14 @@ model:
   trust_remote_code: false
   # No `backend:` block: the HF class (used whenever quantization is on) does not take it
   # and attends with SDPA by default.
+  quantization_config:
+    _target_: transformers.BitsAndBytesConfig
+    load_in_4bit: true
+    bnb_4bit_compute_dtype: bfloat16
+    bnb_4bit_use_double_quant: true
+    bnb_4bit_quant_type: nf4
+    bnb_4bit_quant_storage: bfloat16
+    llm_int8_skip_modules: ["out_proj", "lm_head"]
 
 compile:
   enabled: false
@@ -49,15 +58,6 @@ checkpoint:
   model_save_format: safetensors
   save_consolidated: false
   restore_from: LATEST
-
-quantization:
-  load_in_4bit: true
-  load_in_8bit: false
-  bnb_4bit_compute_dtype: bfloat16
-  bnb_4bit_use_double_quant: true
-  bnb_4bit_quant_type: nf4
-  bnb_4bit_quant_storage: bfloat16
-  llm_int8_skip_modules: ["out_proj", "lm_head"]
 
 peft:
   _target_: nemo_automodel.components._peft.lora.PeftConfig

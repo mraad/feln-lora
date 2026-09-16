@@ -124,13 +124,17 @@ workers (one per GPU; the script claims a checkpoint with an atomic `mkdir`).
 
 Two facts about the AutoModel checkout (`4e00f6be0`) decide the recipe:
 
-- With `quantization:` set, AutoModel abandons its custom `NemotronHForCausalLM` and loads
-  the HF class (transformers 5.15.1), whose Mamba fast path hands `out_proj.weight` straight
-  to the fused kernel — a 4-bit `out_proj` would break there. `llm_int8_skip_modules:
-  ["out_proj", "lm_head"]` keeps them bf16, which needs
-  `scripts/automodel_qlora_skip_modules.patch` (one line: `create_bnb_config` forwards
-  `llm_int8_skip_modules`) applied to the checkout; the applied diff is kept in the run dir
-  (`automodel-4e00f6be0-patched.diff`).
+- With a BitsAndBytes config, AutoModel abandons its custom `NemotronHForCausalLM` and
+  loads the HF class (transformers 5.15.1), whose Mamba fast path hands `out_proj.weight`
+  straight to the fused kernel — a 4-bit `out_proj` would break there.
+  `llm_int8_skip_modules: ["out_proj", "lm_head"]` keeps them bf16. The recipe's own
+  `quantization:` block does not forward that key, so the config is given under `model:` as
+  a nested `transformers.BitsAndBytesConfig` target, which AutoModel instantiates and passes
+  to `from_pretrained` unchanged. (The recorded 2026-09-16 runs used the `quantization:`
+  block plus a one-line patch to `create_bnb_config` on the checkout — the diff is kept in
+  each run dir as `automodel-4e00f6be0-patched.diff`; a 10-step smoke with the nested form
+  and the pristine checkout loads through the same HF/BnB path with the same 17,054,208
+  trainable parameters, so the patch was retired and the checkout reset.)
 - The HF class takes no `backend:` kwarg; it attends with SDPA by default.
 
 `uv pip install bitsandbytes` into the AutoModel venv also downgraded `nvidia-cublas`

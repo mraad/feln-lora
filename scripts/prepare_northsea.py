@@ -25,9 +25,9 @@ from src.feln_data import (
     target_key,
     write_json,
 )
-from src.spatial_query import SpatialQuery
+from src.spatial_query import DATABASE, SpatialQuery
 
-SOURCE = Path.home() / "Documents/ArcGIS/Projects/NorthSea"
+SOURCE = DATABASE.parent
 
 
 def ilike_columns(schema):
@@ -74,9 +74,8 @@ def main():
     assert len(gold) == 1000
     records, corrections, gold_table_layers = [], [], []
     for i, record in enumerate(gold):
-        # Gold that targets a standalone table (no geometry) is outside FELN's reach; the
-        # 2026-09-16 catalog release added 138 such records. Kept out, listed in the manifest.
-        if any(layer in excluded for layer in record["meta"]["layers"]):
+        # Gold on a standalone table (no geometry) is outside FELN's reach: kept out, listed.
+        if not all(layer in schema.layers for layer in record["meta"]["layers"]):
             gold_table_layers.append(i)
             continue
         meta = to_ilike(record["meta"], ilike)
@@ -109,7 +108,7 @@ def main():
     for record in records:
         schema.validate(record["meta"])
 
-    database = SpatialQuery(args.source / "NorthSea.ddb", schema)
+    database = SpatialQuery(args.source / DATABASE.name, schema)
     connection = database.connect()
     kept, dropped, gold_failures = [], [], []
     for n, record in enumerate(records, 1):
@@ -155,7 +154,7 @@ def main():
         "generated_requested": args.generated,
         "catalog_sha256": fingerprint(data / "Layers.json"),
         "source_sha256": fingerprint(data / "FELN.json"),
-        "database_sha256": fingerprint(args.source / "NorthSea.ddb"),
+        "database_sha256": fingerprint(args.source / DATABASE.name),
         "excluded_table_layers": excluded,
         "gold_on_table_layers": gold_table_layers,
         "ilike_columns": ilike,

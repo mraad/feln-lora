@@ -64,8 +64,7 @@ src/spatial_query.py  read-only, parameterized DuckDB execution of a FELN   (fel
 src/gpu_server.py     EC2 machine control, per-GPU llama-servers over SSH, local tunnel
 src/mcp_server.py     MCP over stdio: feln / execute_feln / status / machine_* / server_stop
 scripts/              prepare_northsea.py (data), automodel_nemotron_feln{,_qlora}.yaml (LoRA / QLoRA recipes),
-                      automodel_feln.py + automodel_eval_queue.sh (train + score), automodel_qlora_skip_modules.patch
-                      (AutoModel one-liner QLoRA needs), execution_fidelity.py
+                      automodel_feln.py + automodel_eval_queue.sh (train + score), execution_fidelity.py
 runs/                 git-ignored artifacts: regen-20260914-ilike (data), automodel-nemotron-20260914 and
                       automodel-nemotron-qlora-20260916, automodel-nemotron{,-qlora}-v2-20260916 (RTX mirrors),
                       nemotron-mac-20260915 (v1 LoRA bundle + GGUFs), nemotron-mac-qlora-20260916 (v1 QLoRA),
@@ -148,7 +147,7 @@ uv run --no-sync python -m scripts.prepare_northsea --output runs/<exp>
 # RTX (AutoModel venv, see the YAML header for LD_LIBRARY_PATH): train, then score every
 # checkpoint on validation and select the earliest best
 automodel scripts/automodel_nemotron_feln.yaml --nproc-per-node 1         # LoRA, one GPU
-automodel scripts/automodel_nemotron_feln_qlora.yaml --nproc-per-node 2   # QLoRA NF4, both GPUs (needs scripts/automodel_qlora_skip_modules.patch)
+automodel scripts/automodel_nemotron_feln_qlora.yaml --nproc-per-node 2   # QLoRA NF4, both GPUs
 bash scripts/automodel_eval_queue.sh                                      # one worker per free GPU
 python -m src.infer_feln --model checkpoints/<best>/model --schema data/Layers.json --export exports/<name>
 ```

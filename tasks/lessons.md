@@ -1,2 +1,3 @@
 - 2026-09-14: Over-weighted empty-result queries (capped them in a data regen, reported non-empty execution counts). Rule: FELN validity + strict comparator match is the objective; DB execution is a diagnostic and row counts (incl. zero) are irrelevant to tuning.
 - 2026-09-16: unquoted heredoc (`<<EOF`) ran backticked text as shell commands and hung. Rule: quote heredoc delimiters (`<<'EOF'`) whenever the body contains backticks or $; use Edit/Write for prose files.
+- 2026-09-16: launched a smoke on a GPU that nvidia-smi had just shown busy (29 GB, another project's job). Rule: read the memory column before choosing CUDA_VISIBLE_DEVICES; 0 MiB or do not launch.
