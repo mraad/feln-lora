@@ -40,8 +40,18 @@ that a 4-bit base costs nothing in accuracy. No real-user log has been measured.
 
 The catalog and gold changed on 2026-09-16 (new aliases/hints, 1,000 regenerated questions,
 138 of them on geometry-less table layers that FELN excludes). Zero-shot on the 862
-geometry-layer records both v1 models score **832/862 (96.5%)**; both are being retrained
-on the regenerated data (`runs/regen-20260916-v2`) — see TRAINING.md "v2 catalog".
+geometry-layer records both v1 models score **832/862 (96.5%)**. Retrained in parallel on
+the regenerated data (`runs/regen-20260916-v2`, 3,463/410/419), one GPU each:
+
+| v2 (validation, 410 questions) | LoRA | QLoRA NF4 (one GPU) |
+|---|---|---|
+| Adapter / merged FP16 export | **409/410 (99.76%)** | **409/410 (99.76%)** |
+| Q8_0 GGUF, RTX CUDA / Mac Metal | 408 / 408 | 408 / 408 |
+| Challenge 40, Mac Q8_0 | 37/40 | 36/40 |
+| Train wall time, 1,302 steps | 28 min | 31 min |
+
+Mac bundles and Q8_0 GGUFs: `runs/nemotron-mac-v2-20260916/{lora,qlora}`. See TRAINING.md
+"v2 catalog" for the per-checkpoint table and misses.
 
 ## Layout
 

@@ -222,8 +222,14 @@ GGUF F16/Q8_0 → CUDA validation.
 | Val exact, selected (HF) | **409/410 (99.76%)**, raw 396 | **409/410 (99.76%)**, raw 399 |
 | Val exact, merged FP16 export | 409/410 | 409/410 |
 | Val exact, F16 / Q8_0 GGUF (RTX CUDA) | 408 / 408 | 408 / 408 |
-| Val exact, Q8_0 GGUF (Mac Metal) | MAC_LORA_VAL | MAC_QLORA_VAL |
-| Challenge 40, Q8_0 (Mac Metal) | MAC_LORA_CH | MAC_QLORA_CH |
+| Val exact, Q8_0 GGUF (Mac Metal) | 408/410 (p50 1.21 s) | 408/410 (p50 1.16 s) |
+| Challenge 40, Q8_0 (Mac Metal) | 37/40 | 36/40 |
+
+On the Mac each Q8_0 misses two validation questions (one shared: a "completion date in
+1989" + distance query); on the challenge set LoRA v2 misses the same three as v1 (`6406/`
+prefix, oil-or-gas-but-not-both, `Troll`) and QLoRA v2 additionally the two-relation
+"oil wells within gas discoveries and within 2 km of injection pipelines". Mac artifacts:
+`runs/nemotron-mac-v2-20260916/{lora,qlora}/gguf/eval-*-q8_0-mac.json`.
 
 Per checkpoint (step: exact/410) — LoRA 200:399 217:404 400:407 434:407 600:407 651:406
 800:408 868:409 1000:408 1085:408 1200:408 1302:408; QLoRA 200:405 217:403 400:407 434:406

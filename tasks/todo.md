@@ -52,6 +52,6 @@ redundant type filter); 138/1000 target the two table layers, which FELN exclude
 
 - [x] `scripts/prepare_northsea.py`: gold on table layers skipped and listed in the manifest
 - [x] Data `runs/regen-20260916-v2` (seed 20260916, empty-cap 1.0): 3,463 train / 410 val / 419 test, 0 dropped
-- [~] RTX in parallel, one GPU each (tmux = run name), ckpt/val every 200: LoRA `runs/automodel-nemotron-v2-20260916` (GPU 0), QLoRA `runs/automodel-nemotron-qlora-v2-20260916` (GPU 1, nproc 1); each run.sh chains scoring → export → GGUF → CUDA validation
-- [ ] Copy Q8_0 GGUFs + bundles to Mac `runs/nemotron-mac-v2-20260916/{lora,qlora}`; Metal val + challenge
-- [ ] Table layers stay excluded (decision pending); docs + commit
+- [x] RTX in parallel, one GPU each (tmux = run name), ckpt/val every 200: LoRA `runs/automodel-nemotron-v2-20260916` (GPU 0), QLoRA `runs/automodel-nemotron-qlora-v2-20260916` (GPU 1, nproc 1); each run.sh chains scoring → export → GGUF → CUDA validation
+- [x] Mac `runs/nemotron-mac-v2-20260916/{lora,qlora}`: Metal val 408/410 both; challenge 37/40 LoRA, 36/40 QLoRA
+- [x] Docs + commit; table layers stay excluded (decision pending)

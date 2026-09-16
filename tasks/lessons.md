@@ -1,1 +1,2 @@
 - 2026-09-14: Over-weighted empty-result queries (capped them in a data regen, reported non-empty execution counts). Rule: FELN validity + strict comparator match is the objective; DB execution is a diagnostic and row counts (incl. zero) are irrelevant to tuning.
+- 2026-09-16: unquoted heredoc (`<<EOF`) ran backticked text as shell commands and hung. Rule: quote heredoc delimiters (`<<'EOF'`) whenever the body contains backticks or $; use Edit/Write for prose files.
