@@ -38,6 +38,11 @@ QLoRA Q8_0 misses two validation questions, both among the LoRA GGUF's six. QLoR
 saved memory nor time on this 4B model (see [TRAINING.md](TRAINING.md)); its result is
 that a 4-bit base costs nothing in accuracy. No real-user log has been measured.
 
+The catalog and gold changed on 2026-09-16 (new aliases/hints, 1,000 regenerated questions,
+138 of them on geometry-less table layers that FELN excludes). Zero-shot on the 862
+geometry-layer records both v1 models score **832/862 (96.5%)**; both are being retrained
+on the regenerated data (`runs/regen-20260916-v2`) — see TRAINING.md "v2 catalog".
+
 ## Layout
 
 ```

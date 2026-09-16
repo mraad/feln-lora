@@ -187,6 +187,34 @@ uv run --no-sync python -m feln_studio.server --start \
   --llama "QLoRA NF4 · Q8_0 · 2026-09-16=../feln-lora/runs/nemotron-mac-qlora-20260916/merged=http://127.0.0.1:8094"
 ```
 
+## v2 catalog (2026-09-16) — `runs/regen-20260916-v2/`, RTX `runs/automodel-nemotron{,-qlora}-v2-20260916/`
+
+On 2026-09-16 `~/Documents/ArcGIS/Projects/NorthSea/{Layers.json,FELN.json}` changed:
+no layers, columns or codes were added or removed, but column aliases and hints were
+rewritten (`mud`→`mud records`, `log`→`well logs`, `countryname`→`country name`,
+`oil or gas`→`oil/gas`, YES/NO phrasings such as "with core samples"), and all 1,000 gold
+records were regenerated in a new style ("The returned pipelines must …", quoted values,
+"either … or", "starts/ends with"), 138 of them targeting the two geometry-less table
+layers (`Wells_depth_stats`, `Wells_deep_400_stats`). The prompt's schema context
+(`Schema.context()`) is byte-identical, so the v1 GGUFs remain valid as served.
+
+Zero-shot, the v1 exports on the 862 geometry-layer records of the new gold (RTX, HF
+merged, new `Layers.json`): **LoRA 832/862, QLoRA 832/862 (96.5%)**; the 30 misses are
+mostly missing parentheses in `A AND (B OR C)`, `country name` rendered as `"country"`
+instead of `"countryname"`, and a dropped redundant type filter. The 138 table-layer
+records are 0/138 by construction: `Schema` excludes standalone tables, so they are
+neither trainable nor answerable until that rule changes (decision pending; they stay out).
+
+Retraining (v2): `scripts/prepare_northsea.py` now skips gold on table layers (listed in
+the manifest as `gold_on_table_layers`), then `--seed 20260916 --empty-cap 1.0` gives
+**3,463 train / 410 val / 419 test** (862 gold + 3,600 synthetic, 0 dropped). Both recipes
+retrain in parallel, one GPU each (`--nproc-per-node 1`; QLoRA on one GPU is 1.29 s/step vs
+LoRA 1.10 s/step, 1,302 steps ≈ 25–28 min), checkpoints every 200 steps plus epoch ends,
+each run's `run.sh` chaining `automodel_eval_queue.sh` → `src.infer_feln --export` →
+GGUF F16/Q8_0 → CUDA validation. Results are filled in below when they land; if this
+section still ends here, the runs were in flight (tmux sessions named after the run
+directories; `checkpoint_selection.json` and `export-pipeline.log` in each tell the state).
+
 ## Serving
 
 Mac: `../feln-studio` starts `llama-server` on 8092 from the LoRA Q8_0 GGUF (the QLoRA one is

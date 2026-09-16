@@ -2,8 +2,8 @@
 
 Run from the repo root:
   uv run --no-sync python -m scripts.prepare_northsea --output runs/<run>
-Gold records are never dropped; LIKE->ILIKE rewrites and execution failures are
-recorded in the manifest. Synthetic records that fail to execute are dropped.
+Gold records are never dropped except those targeting geometry-less table layers (listed in
+the manifest); LIKE->ILIKE rewrites and execution failures are recorded in the manifest. Synthetic records that fail to execute are dropped.
 """
 
 import argparse
@@ -72,8 +72,13 @@ def main():
     ilike = ilike_columns(schema)
     gold = json.loads((data / "FELN.json").read_text())
     assert len(gold) == 1000
-    records, corrections = [], []
+    records, corrections, gold_table_layers = [], [], []
     for i, record in enumerate(gold):
+        # Gold that targets a standalone table (no geometry) is outside FELN's reach; the
+        # 2026-09-16 catalog release added 138 such records. Kept out, listed in the manifest.
+        if any(layer in excluded for layer in record["meta"]["layers"]):
+            gold_table_layers.append(i)
+            continue
         meta = to_ilike(record["meta"], ilike)
         if meta != record["meta"]:
             corrections.append(
@@ -152,6 +157,7 @@ def main():
         "source_sha256": fingerprint(data / "FELN.json"),
         "database_sha256": fingerprint(args.source / "NorthSea.ddb"),
         "excluded_table_layers": excluded,
+        "gold_on_table_layers": gold_table_layers,
         "ilike_columns": ilike,
         "like_to_ilike_corrections": len(corrections),
         "corrections": corrections,
