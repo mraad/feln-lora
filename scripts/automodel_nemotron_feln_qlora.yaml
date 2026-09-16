@@ -1,0 +1,116 @@
+# NeMo AutoModel recipe: Nemotron-3-Nano-4B (nemotron_h) QLoRA (NF4) on FELN, 2 GPUs.
+# Identical to automodel_nemotron_feln.yaml (rank 16 / alpha 32, LR 2e-4, wd 0.01, cosine,
+# 3% warmup, effective batch 16, six epochs) except the base model is loaded 4-bit NF4 with
+# double quantization (bitsandbytes 0.50.2) and the job runs on both GPUs (FSDP2 dp=2,
+# local batch 2 x 2 ranks x 4 accumulation = 16, the same effective batch).
+# With `quantization:` set AutoModel loads the HF NemotronHForCausalLM class instead of its
+# custom one; HF's Mamba fast path passes out_proj.weight straight to the fused kernel, so
+# out_proj (and lm_head) stay unquantized via llm_int8_skip_modules — which needs
+# scripts/automodel_qlora_skip_modules.patch applied to the AutoModel checkout.
+#   SP=/home/ubuntu/Automodel/.venv/lib/python3.12/site-packages
+#   LD_LIBRARY_PATH=$(ls -d $SP/nvidia/*/lib | tr '\n' ':') CUDA_VISIBLE_DEVICES=0,1 \
+#     PYTHONPATH=/home/ubuntu/feln-lora HF_HUB_OFFLINE=1 \
+#     /home/ubuntu/Automodel/.venv/bin/automodel /home/ubuntu/feln-lora/scripts/automodel_nemotron_feln_qlora.yaml \
+#     --nproc-per-node 2
+
+recipe: TrainFinetuneRecipeForNextTokenPrediction
+
+step_scheduler:
+  global_batch_size: 16
+  local_batch_size: 2
+  ckpt_every_steps: 100
+  val_every_steps: 100
+  num_epochs: 6
+
+dist_env:
+  backend: nccl
+  timeout_minutes: 20
+
+rng:
+  _target_: nemo_automodel.components.training.rng.StatefulRNG
+  seed: 42
+  ranked: true
+
+model:
+  _target_: nemo_automodel.NeMoAutoModelForCausalLM.from_pretrained
+  pretrained_model_name_or_path: nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16
+  revision: dfaf35de3e30f1867dd8dbc38a7fc9fb52d3914f
+  torch_dtype: bf16
+  trust_remote_code: false
+  # No `backend:` block: the HF class (used whenever quantization is on) does not take it
+  # and attends with SDPA by default.
+
+compile:
+  enabled: false
+
+checkpoint:
+  enabled: true
+  checkpoint_dir: checkpoints/
+  model_save_format: safetensors
+  save_consolidated: false
+  restore_from: LATEST
+
+quantization:
+  load_in_4bit: true
+  load_in_8bit: false
+  bnb_4bit_compute_dtype: bfloat16
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_quant_storage: bfloat16
+  llm_int8_skip_modules: ["out_proj", "lm_head"]
+
+peft:
+  _target_: nemo_automodel.components._peft.lora.PeftConfig
+  # All linear layers except the fused-Mamba out_proj (custom kernel reads the raw
+  # weight) and the output head, matching PEFT all-linear minus the rejected modules.
+  exclude_modules: ["*.out_proj", "*.lm_head", "lm_head"]
+  dim: 16
+  alpha: 32
+  dropout: 0.0
+  use_triton: true
+
+distributed:
+  strategy: fsdp2
+  dp_size: null
+  tp_size: 1
+  cp_size: 1
+  sequence_parallel: false
+
+loss_fn:
+  _target_: nemo_automodel.components.loss.masked_ce.MaskedCrossEntropy
+
+dataset:
+  _target_: scripts.automodel_feln.FELNDataset
+  data_dir: data
+  split: train
+  max_seq_length: 2048
+
+validation_dataset:
+  _target_: scripts.automodel_feln.FELNDataset
+  data_dir: data
+  split: val
+  max_seq_length: 2048
+
+packed_sequence:
+  packed_sequence_size: 0
+
+dataloader:
+  _target_: torchdata.stateful_dataloader.StatefulDataLoader
+  collate_fn: nemo_automodel.components.datasets.utils.default_collater
+  shuffle: true
+
+validation_dataloader:
+  _target_: torchdata.stateful_dataloader.StatefulDataLoader
+  collate_fn: nemo_automodel.components.datasets.utils.default_collater
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 2.0e-4
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+
+lr_scheduler:
+  lr_decay_style: cosine
+  lr_warmup_steps: 40
+  min_lr: 0.0

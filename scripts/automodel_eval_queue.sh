@@ -3,6 +3,8 @@
 # GPU, until training has exited and no checkpoint is left unscored.
 # Usage (from the experiment root runs/<exp>/, which holds data/ and checkpoints/):
 #   CUDA_VISIBLE_DEVICES=0 bash /home/ubuntu/feln-lora/scripts/automodel_eval_queue.sh
+# Several workers (one per free GPU) may run at once: each claims a checkpoint with an
+# atomic mkdir of $d/.scoring; a stale claim from a killed worker is removed by hand.
 set -u
 export HF_HUB_OFFLINE=1 TOKENIZERS_PARALLELISM=false
 export PYTHONPATH=$(cd "$(dirname "$0")/.." && pwd)  # the feln-lora checkout, not the experiment root
@@ -14,7 +16,7 @@ PY=$VENV/bin/python
 
 pending() {
   for d in checkpoints/epoch_*_step_*/; do
-    [ -f "$d/model/adapter_model.safetensors" ] && [ ! -f "$d/eval-val.json" ] && echo "$d"
+    [ -f "$d/model/adapter_model.safetensors" ] && [ ! -f "$d/eval-val.json" ] && [ ! -d "$d/.scoring" ] && echo "$d"
   done
 }
 
@@ -22,12 +24,15 @@ while true; do
   for d in $(pending); do
     # A checkpoint still being written is younger than two minutes.
     [ $(( $(date +%s) - $(stat -c %Y "$d") )) -lt 120 ] && continue
+    mkdir "$d/.scoring" 2>/dev/null || continue
     echo "$(date -u +%FT%TZ) scoring $d"
     $PY -m src.infer_feln --model "$d/model" --schema data/Layers.json \
       --records data/val.json --output "$d/eval-val.json" --batch-size 8 \
       > "$d/eval-val.log" 2>&1 || echo "$(date -u +%FT%TZ) FAILED $d"
+    rmdir "$d/.scoring"
   done
-  if grep -q "^EXIT=" train.log 2>/dev/null && [ -z "$(pending)" ]; then
+  # Done when training has exited and nothing is unscored or claimed by another worker.
+  if grep -q "^EXIT=" train.log 2>/dev/null && [ -z "$(pending)" ] && ! ls -d checkpoints/*/.scoring >/dev/null 2>&1; then
     break
   fi
   sleep 60

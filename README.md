@@ -1,16 +1,41 @@
 # feln-lora
 
-LoRA fine-tuning of **Nemotron-3-Nano-4B** to translate North Sea questions into
-[FELN](../feln) — `{"layers": [...], "where": [...], "relations": [...]}` — served locally
-as a GGUF (llama.cpp) with a JSON-schema grammar. The sibling of [`feln-rag`](../feln-rag),
-which solves the same task by retrieval + frontier LLM; both depend on [`feln`](../feln)
-(the FELN model, strict comparator, units), which in turn pins the public
-[`layers-json`](https://github.com/mraad/layers-json) catalog model.
+## Why a small model
 
-Measured (validation, 444 questions, `feln.FELN.same`): **441/444 (99.3%)** for the adapter
-and the merged FP16 export, **438–439/444 (98.6%)** as F16, Q8_0 or Q4_K_M GGUF on CUDA and Metal
-(a llama.cpp runtime effect, not quantization: F16 misses the same questions). The 40 hand-written challenge questions
-(`tests/challenge.json`): 37/40 on the Mac Q8_0 GGUF. No real-user log has been measured.
+I believe the future belongs to small language models: a model that runs on the edge and
+does one narrow job extremely well, because it was shaped for exactly that job. Retrieval
+works, but it still leans on a large model to do the reasoning, and that model lives
+somewhere else. A small model fine-tuned on the task lets you aim precisely at what you
+are after — here, turning a North Sea question into one exact FELN query — and run it on
+the machine in front of you, offline, in under a second. This repository does that with
+NVIDIA's Nemotron-3-Nano-4B, fine-tuned with LoRA and QLoRA through
+[NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel.git) and served as a GGUF.
+
+## What it is
+
+LoRA (and QLoRA) fine-tuning of **Nemotron-3-Nano-4B** via
+[NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel.git) to translate North Sea
+questions into [FELN](../feln) — `{"layers": [...], "where": [...], "relations": [...]}` —
+served locally as a GGUF (llama.cpp) with a JSON-schema grammar. The sibling of
+[`feln-rag`](../feln-rag), which solves the same task by retrieval + frontier LLM; both
+depend on [`feln`](../feln) (the FELN model, strict comparator, units), which in turn pins
+the public [`layers-json`](https://github.com/mraad/layers-json) catalog model.
+
+Measured (validation, 444 questions, `feln.FELN.same`):
+
+| | LoRA (BF16 base, 1 GPU) | QLoRA (NF4 base, 2 GPUs) |
+|---|---|---|
+| Adapter / merged FP16 export | **441/444 (99.3%)** | **442/444 (99.55%)** |
+| Q8_0 GGUF, RTX CUDA | 438/444 | 442/444 |
+| Q8_0 GGUF, Mac Metal | 438/444 | MAC_VAL/444 |
+| Challenge 40 (`tests/challenge.json`), Mac Q8_0 | 37/40 | MAC_CHALLENGE/40 |
+| Train wall time, 1,332 steps | 28 min | 27 min |
+
+Both select the same checkpoint (step 444) and settle at 441/444 from step 1000; the
+differences are one or two questions. The LoRA GGUFs lose three questions to a llama.cpp
+runtime effect (F16 misses the same ones as Q8_0), the QLoRA GGUFs none. QLoRA neither
+saved memory nor time on this 4B model (see [TRAINING.md](TRAINING.md)); its result is
+that a 4-bit base costs nothing in accuracy. No real-user log has been measured.
 
 ## Layout
 
@@ -25,7 +50,7 @@ src/gpu_server.py     EC2 machine control, per-GPU llama-servers over SSH, local
 src/mcp_server.py     MCP over stdio: feln / execute_feln / status / machine_* / server_stop
 scripts/              prepare_northsea.py (data), automodel_*.{yaml,py,sh} (train + score), execution_fidelity.py
 runs/                 git-ignored artifacts: regen-20260914-ilike (data), automodel-nemotron-20260914 (RTX mirror),
-                      nemotron-mac-20260915 (merged bundle + GGUFs)
+                      nemotron-mac-20260915 (LoRA bundle + GGUFs), nemotron-mac-qlora-20260916 (QLoRA bundle + Q8_0)
 ```
 
 `relations[i]` connects `layers[0]` to `layers[i+1]`. `where[i]` filters `layers[i]`; an
@@ -102,8 +127,9 @@ uv run --no-sync python -m scripts.prepare_northsea --output runs/<exp>
 
 # RTX (AutoModel venv, see the YAML header for LD_LIBRARY_PATH): train, then score every
 # checkpoint on validation and select the earliest best
-automodel scripts/automodel_nemotron_feln.yaml --nproc-per-node 1
-bash scripts/automodel_eval_queue.sh
+automodel scripts/automodel_nemotron_feln.yaml --nproc-per-node 1         # LoRA, one GPU
+automodel scripts/automodel_nemotron_feln_qlora.yaml --nproc-per-node 2   # QLoRA NF4, both GPUs (needs scripts/automodel_qlora_skip_modules.patch)
+bash scripts/automodel_eval_queue.sh                                      # one worker per free GPU
 python -m src.infer_feln --model checkpoints/<best>/model --schema data/Layers.json --export exports/<name>
 ```
 
@@ -120,7 +146,7 @@ diagnostic (`scripts/execution_fidelity.py`), never a tuning signal.
 
 | | feln-rag (5 shots → gpt-5.5) | feln-lora (LoRA → local GGUF) |
 |---|---|---|
-| Strict exact | 0.94 (mpnet RAG, 50 q); 0.86–0.88 zero-shot | 441/444 val (99.3%) HF, 438/444 Q8 GGUF; 37/40 challenge |
+| Strict exact | 0.94 (mpnet RAG, 50 q); 0.86–0.88 zero-shot | 441–442/444 val (99.3–99.55%) HF, 438–442/444 Q8 GGUF; 37/40 challenge |
 | Latency | cloud round trip + ~10 ms retrieval | 0.3 s RTX GPU, ~1 s Mac Metal |
 | Runtime cost / privacy | LLM tokens per query; query + catalog + shots leave the machine | none after training; fully offline |
 | Catalog change | edit `Layers.json` / examples | regenerate data, retrain (~30 min), re-validate |
