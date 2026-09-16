@@ -1,6 +1,8 @@
 """llama-server client: no torch or transformers required.
 
-Start llama-server with the exported GGUF (see src.studio.serve_gguf), then:
+Start llama-server with the exported GGUF:
+llama-server -m runs/nemotron-mac-20260915/gguf/nemotron-4b-step443-q8_0.gguf -c 2048 -np 1 -ngl all --host 127.0.0.1 --port 8092
+then:
 python -m src.edge_client --bundle runs/nemotron-mac-20260915/merged --text 'Show gas wells' --url http://127.0.0.1:8092
 This validates structure/schema, not whether the model understood the question.
 """
@@ -17,8 +19,6 @@ from pathlib import Path
 from feln import FELN, FELNCompare
 
 from .feln_data import Schema, write_json
-
-LLAMA_SERVER_ARGS = ("-c", "2048", "-np", "1", "-ngl", "all", "--host", "127.0.0.1")
 
 
 def output_schema(layer_names: list[str]) -> dict:

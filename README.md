@@ -45,7 +45,6 @@ src/prompt.py         trained prompt, dataset rows, strict JSON parsing   (feln.
 src/feln_data.py      Schema: validate/compile FELN against Layers.json, question generator, grouped split
 src/edge_client.py    llama-server client: grammar, prompt bundle, benchmark   (feln.FELNCompare)
 src/infer_feln.py     GPU box: score a checkpoint / export the merged bundle
-src/studio.py         FELN Studio, local playground on the Mac GGUF          → web/studio/
 src/spatial_query.py  read-only, parameterized DuckDB execution of a FELN   (feln.to_meters)
 src/gpu_server.py     EC2 machine control, per-GPU llama-servers over SSH, local tunnel
 src/mcp_server.py     MCP over stdio: feln / execute_feln / status / machine_* / server_stop
@@ -75,27 +74,18 @@ AutoModel venv; `uv sync --extra train` installs them elsewhere if ever needed.
 
 ## FELN Studio
 
-```bash
-uv run --no-sync python -m src.studio       # http://127.0.0.1:8766/
-```
-
-![FELN Studio: a challenge question, the decoded FELN, and the strict comparator's verdict](docs/studio.png)
-
-Starts Homebrew's `llama-server` on port 8092 with
-`runs/nemotron-mac-20260915/gguf/nemotron-4b-step443-q8_0.gguf` (or reuses a healthy one)
-and stops it on exit; prompt and grammar come from `runs/nemotron-mac-20260915/merged/`.
-Ask a question and inspect the FELN, raw output, timings, the trained prompt (editable as
-an experiment) and the strict comparator's verdict when the question is a recorded one
-(`--records`, default `tests/challenge.json`). Stdlib HTTP server, vanilla JS, localhost
-only. `--llama LABEL=BUNDLE=URL` adds another served GGUF; `--no-nemotron` drops the default.
-To compare the QLoRA model side by side, serve its GGUF on another port and register it:
+The local playground moved to [`../feln-studio`](../feln-studio): one SPA over this GGUF,
+the feln-liquid MLX adapter and feln-rag, with the same strict judge. From there:
 
 ```bash
-llama-server -m runs/nemotron-mac-qlora-20260916/gguf/nemotron-4b-qlora-step443-q8_0.gguf \
-  -c 2048 -np 1 -ngl all --host 127.0.0.1 --port 8093 &
-uv run --no-sync python -m src.studio \
-  --llama "QLoRA NF4 · Q8_0 · 2026-09-16=runs/nemotron-mac-qlora-20260916/merged=http://127.0.0.1:8093"
+uv run --no-sync python -m feln_studio.server --start        # http://127.0.0.1:8766/
 ```
+
+It starts `llama-server` on 8092 from `runs/nemotron-mac-20260915/gguf/` and reads the prompt
+and grammar from `runs/nemotron-mac-20260915/merged/`. To compare the QLoRA model side by
+side, serve its GGUF on another port and register it with
+`--llama LABEL=runs/nemotron-mac-qlora-20260916/merged=URL`; `--gold tests/challenge.json`
+judges against the challenge set.
 
 Benchmark any served GGUF through the same client:
 
@@ -167,7 +157,7 @@ diagnostic (`scripts/execution_fidelity.py`), never a tuning signal.
 Numbers are each project's recorded runs, not one shared benchmark (RAG scored on a
 100-question holdout of the original `FELN.json`; the fine-tune on grouped splits of the
 regenerated ILIKE set plus the challenge set). The two compose: pasting RAG's shots into
-the fine-tuned prompt (the Studio's prompt override) is the cheapest unexplored experiment.
+the fine-tuned prompt (feln-studio's prompt override) is the cheapest unexplored experiment.
 
 ## History
 

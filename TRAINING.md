@@ -7,7 +7,7 @@ restart the training or scoring jobs; rerun only to reproduce or to train on new
 
 | | Path | Notes |
 |---|---|---|
-| Mac | `~/GWorkspace/feln-lora` | data generation, GGUF validation on Metal, Studio, MCP; `uv sync` here |
+| Mac | `~/GWorkspace/feln-lora` | data generation, GGUF validation on Metal, MCP; `uv sync` here (Studio: `../feln-studio`) |
 | RTX (EC2 box in `gpu_server.json`, 2× RTX PRO 6000) | `/home/ubuntu/feln-lora` (rsync of this repo, no `.venv`) | training, checkpoint scoring, merge/export, GGUF conversion (`/home/ubuntu/llama.cpp-gpu/.venv-convert`), inference servers |
 
 The RTX Python is `/home/ubuntu/Automodel/.venv` ([NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel.git) checkout `4e00f6be0`,
@@ -178,16 +178,18 @@ On the Mac the QLoRA Q8_0 misses two validation questions, both among the LoRA G
 questions as LoRA (`6406/` prefix, oil-or-gas-but-not-both, `Troll`; the LoRA control was
 re-run in the same session, `runs/nemotron-mac-20260915/gguf/eval-challenge-q8_0-mac.json`).
 
-The Mac serves the QLoRA GGUF next to the LoRA one:
+The Mac serves the QLoRA GGUF next to the LoRA one in `../feln-studio`:
 
 ```bash
-uv run --no-sync python -m src.studio \
-  --llama "QLoRA NF4 · Q8_0 · 2026-09-16=runs/nemotron-mac-qlora-20260916/merged=http://127.0.0.1:8093"
+llama-server -m runs/nemotron-mac-qlora-20260916/gguf/nemotron-4b-qlora-step443-q8_0.gguf \
+  -c 2048 -np 1 -ngl all --host 127.0.0.1 --port 8094 &
+uv run --no-sync python -m feln_studio.server --start \
+  --llama "QLoRA NF4 · Q8_0 · 2026-09-16=../feln-lora/runs/nemotron-mac-qlora-20260916/merged=http://127.0.0.1:8094"
 ```
 
 ## Serving
 
-Mac: `src.studio` starts `llama-server` on 8092 from the LoRA Q8_0 GGUF (the QLoRA one is
+Mac: `../feln-studio` starts `llama-server` on 8092 from the LoRA Q8_0 GGUF (the QLoRA one is
 registered with `--llama`, see above). RTX: `src.gpu_server
 server start` runs `llama-server -c 4096 -np 2 -ngl all` per GPU in tmux sessions
 `feln-gpu-server-<gpu>` on ports 8090/8091 (localhost), reached from the Mac over an

@@ -1,6 +1,6 @@
 [project]
 name = "feln-lora"
-version = "0.1.0"
+version = "0.2.0"
 description = "LoRA fine-tuning of Nemotron-3-Nano-4B for natural language → FELN, served as GGUF."
 requires-python = ">=3.12,<3.14"
 dependencies = [
