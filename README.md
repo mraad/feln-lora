@@ -101,8 +101,8 @@ It starts `llama-server` on 8092 from the v2 QLoRA GGUF
 and grammar from `runs/nemotron-mac-v2-20260916/qlora/merged/` (since 2026-09-16; the v1
 model is `runs/nemotron-mac-20260915`). To compare another GGUF side by side, serve it on
 another port and register it with `--llama LABEL=BUNDLE=URL`, e.g.
-`runs/nemotron-mac-v2-20260916/lora/merged`; `--gold tests/challenge.json` judges against
-the challenge set.
+`--llama "LoRA v2 · Q8_0=runs/nemotron-mac-v2-20260916/lora/merged=http://127.0.0.1:8094"`;
+`--gold tests/challenge.json` judges against the challenge set.
 
 Benchmark any served GGUF through the same client:
 
