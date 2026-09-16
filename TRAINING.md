@@ -160,9 +160,9 @@ and both selections land on the same checkpoint.
 | Val exact, merged FP16 export | 441/444 | 442/444 |
 | Val exact, F16 GGUF (RTX CUDA) | 438/444 | 442/444 |
 | Val exact, Q8_0 GGUF (RTX CUDA) | 438/444 | 442/444 |
-| Val exact, Q8_0 GGUF (Mac Metal) | 438/444 | MAC_VAL |
-| Challenge 40, Q8_0 GGUF (Mac Metal) | 37/40 | MAC_CHALLENGE |
-| Warm p50 per question, Q8_0 (RTX / Mac) | 0.33 s / 1.13 s | 0.32 s / MAC_P50 |
+| Val exact, Q8_0 GGUF (Mac Metal) | 438/444 | 442/444 |
+| Challenge 40, Q8_0 GGUF (Mac Metal) | 37/40 | 37/40 |
+| Warm p50 per question, Q8_0 (RTX / Mac) | 0.33 s / 1.13 s | 0.32 s / 1.22 s (challenge; the val pass ran while a VM and an ONNX job loaded the Mac, 2.6 s) |
 
 Memory did not drop: on a 4B model the bf16 weights are ~8 GB and LoRA activations,
 optimizer state and the FSDP2 all-gathers dominate, and the NF4 dequantization is not
@@ -171,6 +171,11 @@ QLoRA's value here is that it costs nothing in accuracy (the fine-tuned adapter 
 a 4-bit base at train time and merges cleanly into the full-precision base for the GGUF),
 not that it is cheaper on this hardware. GGUF conversion is the same `stage/` recipe:
 `gguf/nemotron-4b-qlora-step443-{f16,q8_0}.gguf` (Q8_0 `ec443cbb…`, 4.23 GB).
+
+On the Mac the QLoRA Q8_0 misses two validation questions, both among the LoRA GGUF's six
+(`gguf/eval-val-q8_0-mac.predictions.json` in each run dir), and the same three challenge
+questions as LoRA (`6406/` prefix, oil-or-gas-but-not-both, `Troll`; the LoRA control was
+re-run in the same session, `runs/nemotron-mac-20260915/gguf/eval-challenge-q8_0-mac.json`).
 
 The Mac serves the QLoRA GGUF next to the LoRA one:
 

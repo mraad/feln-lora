@@ -41,5 +41,5 @@ Findings before starting: RTX box running, both GPUs idle, no tmux. AutoModel ve
 - [x] Full run `runs/automodel-nemotron-qlora-20260916/`: 1,332 steps in 27:15 on both GPUs, 1.04 s/step, peak 17.4 GiB/GPU, final val loss 0.0026 (data = copy of the 20260914 split), 6 epochs, in tmux
 - [x] Scored all 19 checkpoints with two queue workers (mkdir claim added to `automodel_eval_queue.sh`); selected step 444 = 442/444 (LoRA: same step, 441/444)
 - [x] Export merged FP16 (re-scores 442/444), F16 + Q8_0 GGUF on RTX both 442/444 (LoRA GGUFs 438); Q8_0 `ec443cbb…` rsynced to Mac `runs/nemotron-mac-qlora-20260916/`
-- [ ] Mac: score val + challenge via `src.edge_client --records` on Metal; Studio `--llama qlora=…` side by side
-- [ ] Compare table (val HF, val Q8_0, challenge, s/step, peak GPU mem, wall time) → TRAINING.md + README; commit
+- [x] Mac Metal: val 442/444, challenge 37/40 (same three misses as LoRA, control re-run); Studio side-by-side below
+- [x] Compare table → TRAINING.md + README; committed

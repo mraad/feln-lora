@@ -27,13 +27,14 @@ Measured (validation, 444 questions, `feln.FELN.same`):
 |---|---|---|
 | Adapter / merged FP16 export | **441/444 (99.3%)** | **442/444 (99.55%)** |
 | Q8_0 GGUF, RTX CUDA | 438/444 | 442/444 |
-| Q8_0 GGUF, Mac Metal | 438/444 | MAC_VAL/444 |
-| Challenge 40 (`tests/challenge.json`), Mac Q8_0 | 37/40 | MAC_CHALLENGE/40 |
+| Q8_0 GGUF, Mac Metal | 438/444 | 442/444 |
+| Challenge 40 (`tests/challenge.json`), Mac Q8_0 | 37/40 | 37/40 (same three misses) |
 | Train wall time, 1,332 steps | 28 min | 27 min |
 
 Both select the same checkpoint (step 444) and settle at 441/444 from step 1000; the
 differences are one or two questions. The LoRA GGUFs lose three questions to a llama.cpp
-runtime effect (F16 misses the same ones as Q8_0), the QLoRA GGUFs none. QLoRA neither
+runtime effect (F16 misses the same ones as Q8_0), the QLoRA GGUFs none: on the Mac the
+QLoRA Q8_0 misses two validation questions, both among the LoRA GGUF's six. QLoRA neither
 saved memory nor time on this 4B model (see [TRAINING.md](TRAINING.md)); its result is
 that a 4-bit base costs nothing in accuracy. No real-user log has been measured.
 
