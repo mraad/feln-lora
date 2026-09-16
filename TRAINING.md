@@ -240,8 +240,11 @@ Per checkpoint (step: exact/410) — LoRA 200:399 217:404 400:407 434:407 600:40
 
 ## Serving
 
-Mac: `../feln-studio` starts `llama-server` on 8092 from the LoRA Q8_0 GGUF (the QLoRA one is
-registered with `--llama`, see above). RTX: `src.gpu_server
+Mac: `../feln-studio` starts `llama-server` on 8092 from the **v2 LoRA** Q8_0 GGUF
+(`runs/nemotron-mac-v2-20260916/lora`, its default since 2026-09-16); any other GGUF is
+registered with `--llama`, see above. RTX: the remote servers and `gpu_server.json` still
+pin the v1 LoRA Q8_0 (`110fdab9…`); switch `server.gguf`/`gguf_sha256`/`bundle` to the v2
+files under `runs/automodel-nemotron-v2-20260916/` to serve v2 there. `src.gpu_server
 server start` runs `llama-server -c 4096 -np 2 -ngl all` per GPU in tmux sessions
 `feln-gpu-server-<gpu>` on ports 8090/8091 (localhost), reached from the Mac over an
 `ssh -L` tunnel; two instances measured 14.5 s vs 23.1 s for the same batch on one, while

@@ -22,5 +22,6 @@
     "slots": 2
   },
   "bundle": "runs/nemotron-mac-20260915/merged",
+  "_note": "v1 LoRA pins; for v2 use runs/automodel-nemotron-v2-20260916/gguf/nemotron-4b-v2-lora-q8_0.gguf (a49d037b…) and runs/nemotron-mac-v2-20260916/lora/merged",
   "local_port": 8090
 }
