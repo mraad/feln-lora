@@ -90,6 +90,11 @@ class LlamaFELN:
         }
 
 
+def shown(path: Path) -> Path:
+    """Repository-relative when possible: the UI must not leak the home directory."""
+    return path.relative_to(ROOT) if path.is_relative_to(ROOT) else path
+
+
 class Studio:
     def __init__(self, models: dict[str, tuple[Path, str]], records: list[Path]):
         """models: label -> (bundle directory, llama-server URL serving its GGUF)."""
@@ -114,7 +119,7 @@ class Studio:
             "models": [
                 {
                     "label": label,
-                    "bundle": f"{entry['bundle']} → {entry['url']}",
+                    "bundle": f"{shown(entry['bundle'])} → {entry['url']}",
                     "prompt_prefix": entry["runtime"].prompt["prompt_prefix"],
                 }
                 for label, entry in self.models.items()

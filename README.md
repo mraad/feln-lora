@@ -50,6 +50,8 @@ AutoModel venv; `uv sync --extra train` installs them elsewhere if ever needed.
 uv run --no-sync python -m src.studio       # http://127.0.0.1:8766/
 ```
 
+![FELN Studio: a challenge question, the decoded FELN, and the strict comparator's verdict](docs/studio.png)
+
 Starts Homebrew's `llama-server` on port 8092 with
 `runs/nemotron-mac-20260915/gguf/nemotron-4b-step443-q8_0.gguf` (or reuses a healthy one)
 and stops it on exit; prompt and grammar come from `runs/nemotron-mac-20260915/merged/`.
