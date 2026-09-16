@@ -211,9 +211,26 @@ the manifest as `gold_on_table_layers`), then `--seed 20260916 --empty-cap 1.0` 
 retrain in parallel, one GPU each (`--nproc-per-node 1`; QLoRA on one GPU is 1.29 s/step vs
 LoRA 1.10 s/step, 1,302 steps ≈ 25–28 min), checkpoints every 200 steps plus epoch ends,
 each run's `run.sh` chaining `automodel_eval_queue.sh` → `src.infer_feln --export` →
-GGUF F16/Q8_0 → CUDA validation. Results are filled in below when they land; if this
-section still ends here, the runs were in flight (tmux sessions named after the run
-directories; `checkpoint_selection.json` and `export-pipeline.log` in each tell the state).
+GGUF F16/Q8_0 → CUDA validation.
+
+| v2 (410-question validation) | LoRA (GPU 0) | QLoRA NF4 (GPU 1, one GPU) |
+|---|---|---|
+| Wall time, 1,302 steps | 28:22 (1.10 s/step) | 31:06 (1.29 s/step) |
+| Peak memory | 15.6 GiB | 18.4 GiB |
+| Final validation loss | 0.0029 | 0.0019 |
+| Selected checkpoint | `epoch_3_step_867` (step 868) | `epoch_4_step_999` (step 1000) |
+| Val exact, selected (HF) | **409/410 (99.76%)**, raw 396 | **409/410 (99.76%)**, raw 399 |
+| Val exact, merged FP16 export | 409/410 | 409/410 |
+| Val exact, F16 / Q8_0 GGUF (RTX CUDA) | 408 / 408 | 408 / 408 |
+| Val exact, Q8_0 GGUF (Mac Metal) | MAC_LORA_VAL | MAC_QLORA_VAL |
+| Challenge 40, Q8_0 (Mac Metal) | MAC_LORA_CH | MAC_QLORA_CH |
+
+Per checkpoint (step: exact/410) — LoRA 200:399 217:404 400:407 434:407 600:407 651:406
+800:408 868:409 1000:408 1085:408 1200:408 1302:408; QLoRA 200:405 217:403 400:407 434:406
+600:407 651:407 800:407 868:407 1000:409 1085:407 1200:408 1302:408. Both plateau at
+407–409 from step 400 on; the selections differ by one question. GGUFs: LoRA Q8_0
+`a49d037b…`, QLoRA Q8_0 `b840af2b…` (`gguf/sha256.txt` in each run dir; Mac copies under
+`runs/nemotron-mac-v2-20260916/{lora,qlora}`).
 
 ## Serving
 
