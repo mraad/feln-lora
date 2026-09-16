@@ -8,15 +8,16 @@ restart the training or scoring jobs; rerun only to reproduce or to train on new
 | | Path | Notes |
 |---|---|---|
 | Mac | `~/GWorkspace/feln-lora` | data generation, GGUF validation on Metal, Studio, MCP; `uv sync` here |
-| RTX (EC2 box in `gpu_server.json`, 2× RTX PRO 6000) | `/home/ubuntu/feln-lora` (rsync of this repo, no `.venv`) | training, checkpoint scoring, merge/export, GGUF conversion, inference servers |
+| RTX (EC2 box in `gpu_server.json`, 2× RTX PRO 6000) | `/home/ubuntu/feln-lora` (rsync of this repo, no `.venv`) | training, checkpoint scoring, merge/export, GGUF conversion (`/home/ubuntu/llama.cpp-gpu/.venv-convert`), inference servers |
 
 The RTX Python is `/home/ubuntu/Automodel/.venv` ([NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel.git) checkout `4e00f6be0`,
-Python 3.12, torch 2.10+cu130, transformers 5.15.1, peft 0.20.0, torchao 0.18, mamba_ssm
-kernels) with `uv pip install --no-deps -e /home/ubuntu/feln -e /home/ubuntu/layers-json`
+Python 3.12, torch 2.10+cu130, transformers 5.15.1, peft 0.20.0, torchao 0.18, bitsandbytes
+0.50.2, mamba_ssm kernels) with `uv pip install --no-deps -e /home/ubuntu/feln -e /home/ubuntu/layers-json`
 on top — rsync those sibling checkouts alongside this one (or install feln without
 `--no-deps` and let it fetch the public layers-json pin). A `uv sync` in
 `/home/ubuntu/Automodel` would undo the `uv pip` additions (peft, sqlglot, pydantic,
-torchao, feln, layers-json); never run it there. `/home/ubuntu/gait-feln-finetuning/.venv`
+torchao, bitsandbytes, feln, layers-json); never run it there, and after any `uv pip install`
+there check `nvidia-cublas` is still 13.4.1.1 (installing bitsandbytes downgraded it). `/home/ubuntu/gait-feln-finetuning/.venv`
 is the retired Qwen-era stack: it lacks mamba_ssm and OOMs on Nemotron scoring.
 
 Two environment rules, both encoded in `scripts/automodel_nemotron_feln.yaml` and
@@ -49,7 +50,7 @@ Empty result sets are kept (`--empty-cap 1.0`): row counts are irrelevant to the
 objective. `grouped_split` keeps a target and its paraphrases in one split:
 **3,550 train / 444 val / 435 test**, target groups disjoint (asserted).
 
-## Recipe — `scripts/automodel_nemotron_feln.yaml`
+## Recipe (LoRA) — `scripts/automodel_nemotron_feln.yaml`
 
 `nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16` @ `dfaf35de…` (Mamba-2 hybrid, `nemotron_h`),
 BF16 LoRA rank 16 / alpha 32 / dropout 0 on all linear modules except `*.out_proj` (the
@@ -74,7 +75,7 @@ The queue scores each finished checkpoint on `data/val.json` with `src.infer_fel
 (batch 8), writes `checkpoints/*/eval-val.json`, and ends with `checkpoint_selection.json`:
 validation `exact_match`, earliest step on ties. Test is never scored by either job.
 
-## Result — `runs/automodel-nemotron-20260914/`
+## Result (LoRA) — `runs/automodel-nemotron-20260914/`
 
 Selected `checkpoints/epoch_1_step_443` (step 444): **441/444 exact (99.32%)**, raw 96.85%,
 0 parse errors; all 19 checkpoints from step 100 on score 420–441 (`checkpoint_selection.json`).
@@ -84,7 +85,7 @@ merge, FP16 stored, `inference_config.json` prompt prefix/suffix + JSON-schema g
 (`exports/nemotron-4b-step443/eval-val-merged.json`). Re-scoring the recorded predictions
 with `feln.FELN.same` (this repo's comparator) also gives 441/444 with no flipped verdict.
 
-## GGUF — `runs/nemotron-mac-20260915/gguf/`, RTX `runs/automodel-nemotron-20260914/gguf/`
+## GGUF (LoRA) — `runs/nemotron-mac-20260915/gguf/`, RTX `runs/automodel-nemotron-20260914/gguf/`
 
 llama.cpp `b29c606e2` (the pinned older build has the `NEMOTRON_H` arch but no converter
 class). The transformers-5 export confuses `convert_hf_to_gguf.py` (MoE misdetection,
@@ -186,7 +187,8 @@ uv run --no-sync python -m src.studio \
 
 ## Serving
 
-Mac: `src.studio` starts `llama-server` on 8092 from the Q8_0 GGUF. RTX: `src.gpu_server
+Mac: `src.studio` starts `llama-server` on 8092 from the LoRA Q8_0 GGUF (the QLoRA one is
+registered with `--llama`, see above). RTX: `src.gpu_server
 server start` runs `llama-server -c 4096 -np 2 -ngl all` per GPU in tmux sessions
 `feln-gpu-server-<gpu>` on ports 8090/8091 (localhost), reached from the Mac over an
 `ssh -L` tunnel; two instances measured 14.5 s vs 23.1 s for the same batch on one, while

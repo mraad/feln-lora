@@ -49,9 +49,12 @@ src/studio.py         FELN Studio, local playground on the Mac GGUF          →
 src/spatial_query.py  read-only, parameterized DuckDB execution of a FELN   (feln.to_meters)
 src/gpu_server.py     EC2 machine control, per-GPU llama-servers over SSH, local tunnel
 src/mcp_server.py     MCP over stdio: feln / execute_feln / status / machine_* / server_stop
-scripts/              prepare_northsea.py (data), automodel_*.{yaml,py,sh} (train + score), execution_fidelity.py
-runs/                 git-ignored artifacts: regen-20260914-ilike (data), automodel-nemotron-20260914 (RTX mirror),
-                      nemotron-mac-20260915 (LoRA bundle + GGUFs), nemotron-mac-qlora-20260916 (QLoRA bundle + Q8_0)
+scripts/              prepare_northsea.py (data), automodel_nemotron_feln{,_qlora}.yaml (LoRA / QLoRA recipes),
+                      automodel_feln.py + automodel_eval_queue.sh (train + score), automodel_qlora_skip_modules.patch
+                      (AutoModel one-liner QLoRA needs), execution_fidelity.py
+runs/                 git-ignored artifacts: regen-20260914-ilike (data), automodel-nemotron-20260914 and
+                      automodel-nemotron-qlora-20260916 (RTX mirrors), nemotron-mac-20260915 (LoRA bundle + GGUFs),
+                      nemotron-mac-qlora-20260916 (QLoRA bundle + Q8_0)
 ```
 
 `relations[i]` connects `layers[0]` to `layers[i+1]`. `where[i]` filters `layers[i]`; an
@@ -85,6 +88,14 @@ Ask a question and inspect the FELN, raw output, timings, the trained prompt (ed
 an experiment) and the strict comparator's verdict when the question is a recorded one
 (`--records`, default `tests/challenge.json`). Stdlib HTTP server, vanilla JS, localhost
 only. `--llama LABEL=BUNDLE=URL` adds another served GGUF; `--no-nemotron` drops the default.
+To compare the QLoRA model side by side, serve its GGUF on another port and register it:
+
+```bash
+llama-server -m runs/nemotron-mac-qlora-20260916/gguf/nemotron-4b-qlora-step443-q8_0.gguf \
+  -c 2048 -np 1 -ngl all --host 127.0.0.1 --port 8093 &
+uv run --no-sync python -m src.studio \
+  --llama "QLoRA NF4 · Q8_0 · 2026-09-16=runs/nemotron-mac-qlora-20260916/merged=http://127.0.0.1:8093"
+```
 
 Benchmark any served GGUF through the same client:
 
