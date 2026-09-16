@@ -1,7 +1,10 @@
 # Training, scoring, export — Nemotron-3-Nano-4B LoRA and QLoRA
 
-The LoRA run (2026-09-14/15) and the QLoRA run (2026-09-16) below are complete. Do not
-restart the training or scoring jobs; rerun only to reproduce or to train on new data.
+The v1 LoRA (2026-09-14/15) and QLoRA (2026-09-16) runs and the v2 retrains of both
+(2026-09-16) below are complete. Do not restart the training or scoring jobs; rerun only
+to reproduce or to train on new data. Everything trains through
+[NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel): the YAML recipes in `scripts/`
+are its config format, `automodel <recipe>` is its CLI, and the pinned checkout is below.
 
 ## Machines
 
@@ -10,9 +13,12 @@ restart the training or scoring jobs; rerun only to reproduce or to train on new
 | Mac | `~/GWorkspace/feln-lora` | data generation, GGUF validation on Metal, MCP; `uv sync` here (Studio: `../feln-studio`) |
 | RTX (EC2 box in `gpu_server.json`, 2× RTX PRO 6000) | `/home/ubuntu/feln-lora` (rsync of this repo, no `.venv`) | training, checkpoint scoring, merge/export, GGUF conversion (`/home/ubuntu/llama.cpp-gpu/.venv-convert`), inference servers |
 
-The RTX Python is `/home/ubuntu/Automodel/.venv` ([NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel.git) checkout `4e00f6be0`,
-Python 3.12, torch 2.10+cu130, transformers 5.15.1, peft 0.20.0, torchao 0.18, bitsandbytes
-0.50.2, mamba_ssm kernels) with `uv pip install --no-deps -e /home/ubuntu/feln -e /home/ubuntu/layers-json`
+The RTX Python is `/home/ubuntu/Automodel/.venv` (a
+[NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel) checkout at
+[`4e00f6be0`](https://github.com/NVIDIA-NeMo/Automodel/commit/4e00f6be078fbaf171272a775115023790284c78)
+of 2026-09-14, between v0.3.0rc4 and main; the Mac's `~/GWorkspace/Automodel` clone tracks
+main and is for reading the source only), Python 3.12, torch 2.10+cu130, transformers
+5.15.1, peft 0.20.0, torchao 0.18, bitsandbytes 0.50.2, mamba_ssm kernels) with `uv pip install --no-deps -e /home/ubuntu/feln -e /home/ubuntu/layers-json`
 on top — rsync those sibling checkouts alongside this one (or install feln without
 `--no-deps` and let it fetch the public layers-json pin). A `uv sync` in
 `/home/ubuntu/Automodel` would undo the `uv pip` additions (peft, sqlglot, pydantic,
@@ -116,7 +122,8 @@ runtime (llama.cpp decoding/grammar) effect, not quantization. Challenge set
 ## QLoRA — `runs/automodel-nemotron-qlora-20260916/`, Mac `runs/nemotron-mac-qlora-20260916/`
 
 Same data, adapter shape and schedule as the LoRA run (`scripts/automodel_nemotron_feln_qlora.yaml`
-diffs from the LoRA recipe only in its `quantization:` block and the absence of the custom-model
+diffs from the LoRA recipe only in a `model.quantization_config:` block — a nested
+`transformers.BitsAndBytesConfig` target — and the absence of the custom-model
 `backend:` block), base loaded 4-bit NF4 with double quantization (`bitsandbytes` 0.50.2,
 compute and storage dtype bf16), trained on **both GPUs** (`--nproc-per-node 2`, FSDP2 dp=2,
 local batch 2 → effective 16 unchanged, seed 42), then scored by two `automodel_eval_queue.sh`

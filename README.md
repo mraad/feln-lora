@@ -9,12 +9,13 @@ somewhere else. A small model fine-tuned on the task lets you aim precisely at w
 are after — here, turning a North Sea question into one exact FELN query — and run it on
 the machine in front of you, offline, in under a second. This repository does that with
 NVIDIA's Nemotron-3-Nano-4B, fine-tuned with LoRA and QLoRA through
-[NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel.git) and served as a GGUF.
+[NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel) and served as a GGUF.
 
 ## What it is
 
 LoRA (and QLoRA) fine-tuning of **Nemotron-3-Nano-4B** via
-[NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel.git) to translate North Sea
+[NeMo AutoModel](https://github.com/NVIDIA-NeMo/Automodel) (the YAML recipes in
+`scripts/`, run with its `automodel` CLI) to translate North Sea
 questions into [FELN](../feln) — `{"layers": [...], "where": [...], "relations": [...]}` —
 served locally as a GGUF (llama.cpp) with a JSON-schema grammar. The sibling of
 [`feln-rag`](../feln-rag), which solves the same task by retrieval + frontier LLM; both
@@ -147,7 +148,7 @@ uv run --no-sync python -m scripts.prepare_northsea --output runs/<exp>
 # RTX (AutoModel venv, see the YAML header for LD_LIBRARY_PATH): train, then score every
 # checkpoint on validation and select the earliest best
 automodel scripts/automodel_nemotron_feln.yaml --nproc-per-node 1         # LoRA, one GPU
-automodel scripts/automodel_nemotron_feln_qlora.yaml --nproc-per-node 2   # QLoRA NF4, both GPUs
+automodel scripts/automodel_nemotron_feln_qlora.yaml --nproc-per-node 2   # QLoRA NF4, both GPUs (v2 ran with 1)
 bash scripts/automodel_eval_queue.sh                                      # one worker per free GPU
 python -m src.infer_feln --model checkpoints/<best>/model --schema data/Layers.json --export exports/<name>
 ```
@@ -165,7 +166,7 @@ diagnostic (`scripts/execution_fidelity.py`), never a tuning signal.
 
 | | feln-rag (5 shots → gpt-5.5) | feln-lora (LoRA → local GGUF) |
 |---|---|---|
-| Strict exact | 0.94 (mpnet RAG, 50 q); 0.86–0.88 zero-shot | 441–442/444 val (99.3–99.55%) HF, 438–442/444 Q8 GGUF; 37/40 challenge |
+| Strict exact | 0.94 (mpnet RAG, 50 q); 0.86–0.88 zero-shot | v1: 441–442/444 val (99.3–99.55%) HF, 438–442/444 Q8 GGUF, 37/40 challenge; v2: 409/410 HF, 408/410 Q8, 36–37/40 challenge |
 | Latency | cloud round trip + ~10 ms retrieval | 0.3 s RTX GPU, ~1 s Mac Metal |
 | Runtime cost / privacy | LLM tokens per query; query + catalog + shots leave the machine | none after training; fully offline |
 | Catalog change | edit `Layers.json` / examples | regenerate data, retrain (~30 min), re-validate |

@@ -1,4 +1,4 @@
-# NeMo AutoModel recipe: Nemotron-3-Nano-4B (nemotron_h) BF16 LoRA on FELN.
+# NeMo AutoModel (https://github.com/NVIDIA-NeMo/Automodel) recipe: Nemotron-3-Nano-4B (nemotron_h) BF16 LoRA on FELN.
 # Mirrors the backbone baseline (BACKBONE_TRIALS_2026-09-13.md): rank 16 / alpha 32,
 # LR 2e-4, wd 0.01, cosine, 3% warmup, effective batch 16, six epochs, eval/ckpt every 100.
 # Validation here is loss only; FELN exact match is scored post hoc per checkpoint with

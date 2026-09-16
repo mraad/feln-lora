@@ -1,4 +1,4 @@
-# NeMo AutoModel recipe: Nemotron-3-Nano-4B (nemotron_h) QLoRA (NF4) on FELN, 2 GPUs.
+# NeMo AutoModel (https://github.com/NVIDIA-NeMo/Automodel) recipe: Nemotron-3-Nano-4B (nemotron_h) QLoRA (NF4) on FELN, 2 GPUs.
 # Identical to automodel_nemotron_feln.yaml (rank 16 / alpha 32, LR 2e-4, wd 0.01, cosine,
 # 3% warmup, effective batch 16, six epochs) except the base model is loaded 4-bit NF4 with
 # double quantization (bitsandbytes 0.50.2) and the job runs on both GPUs (FSDP2 dp=2,
