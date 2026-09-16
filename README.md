@@ -68,7 +68,7 @@ scripts/              prepare_northsea.py (data), automodel_nemotron_feln{,_qlor
 runs/                 git-ignored artifacts: regen-20260914-ilike (data), automodel-nemotron-20260914 and
                       automodel-nemotron-qlora-20260916, automodel-nemotron{,-qlora}-v2-20260916 (RTX mirrors),
                       nemotron-mac-20260915 (v1 LoRA bundle + GGUFs), nemotron-mac-qlora-20260916 (v1 QLoRA),
-                      nemotron-mac-v2-20260916/{lora,qlora} (v2 bundles + Q8_0; the Studio serves lora)
+                      nemotron-mac-v2-20260916/{lora,qlora} (v2 bundles + Q8_0; the Studio serves qlora)
 ```
 
 `relations[i]` connects `layers[0]` to `layers[i+1]`. `where[i]` filters `layers[i]`; an
@@ -96,18 +96,18 @@ the feln-liquid MLX adapter and feln-rag, with the same strict judge. From there
 uv run --no-sync python -m feln_studio.server --start        # http://127.0.0.1:8766/
 ```
 
-It starts `llama-server` on 8092 from the v2 LoRA GGUF
-`runs/nemotron-mac-v2-20260916/lora/gguf/nemotron-4b-v2-lora-q8_0.gguf` and reads the prompt
-and grammar from `runs/nemotron-mac-v2-20260916/lora/merged/` (since 2026-09-16; the v1
+It starts `llama-server` on 8092 from the v2 QLoRA GGUF
+`runs/nemotron-mac-v2-20260916/qlora/gguf/nemotron-4b-v2-qlora-q8_0.gguf` and reads the prompt
+and grammar from `runs/nemotron-mac-v2-20260916/qlora/merged/` (since 2026-09-16; the v1
 model is `runs/nemotron-mac-20260915`). To compare another GGUF side by side, serve it on
 another port and register it with `--llama LABEL=BUNDLE=URL`, e.g.
-`runs/nemotron-mac-v2-20260916/qlora/merged`; `--gold tests/challenge.json` judges against
+`runs/nemotron-mac-v2-20260916/lora/merged`; `--gold tests/challenge.json` judges against
 the challenge set.
 
 Benchmark any served GGUF through the same client:
 
 ```bash
-uv run --no-sync python -m src.edge_client --bundle runs/nemotron-mac-v2-20260916/lora/merged \
+uv run --no-sync python -m src.edge_client --bundle runs/nemotron-mac-v2-20260916/qlora/merged \
   --url http://127.0.0.1:8092 --records tests/challenge.json --output /tmp/challenge.json
 ```
 
